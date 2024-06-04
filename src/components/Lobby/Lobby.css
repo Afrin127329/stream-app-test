@@ -1,0 +1,69 @@
+.main {
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    gap: 2rem;
+}
+
+.form-label {
+    font-size: 1.3rem;
+    line-height: 1.7em;
+}
+
+.form-control {
+    padding: 0.5rem;
+}
+
+#form__container {
+    width: 90%;
+    max-width: 600px;
+    border-radius: 10px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 1.5px solid #01cf2d;
+    background-color: #a1ffa7;
+    padding: 1rem;
+}
+
+#lobby__form {
+    padding: 1em;
+    display: flex;
+    justify-content: center;
+}
+
+#form__container__header {
+    border-radius: 10px 10px 0 0;
+    padding: 10px;
+    text-align: center;
+    margin: 0;
+    font-size: 18px;
+    font-size: 300;
+    line-height: 0;
+}
+
+.form__field__wrapper {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+}
+
+.createRoombtn {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.1rem;
+    gap: 1rem;
+}
+
+.generate-roomId {
+    width: 35%;
+}
+
+.input-group-text {
+    width: 65%;
+    color: #3f434a;
+}

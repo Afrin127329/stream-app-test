@@ -1,0 +1,13 @@
+.leave-container {
+    height: 30rem;
+    display: flex;
+    flex-direction: column;
+    background-color: #a1ffa7;
+    align-items: center;
+    justify-content: center;
+    border-radius: 25px;
+    border: 1.5px solid #01cf2d;
+}
+.leave-text {
+    line-height: 55px;
+}
