@@ -15,5 +15,6 @@ export interface RoomState {
     askForUsername: boolean;
     username: string;
     message: string;
-    totalUser: number;
+    users: any[];
+    sender: string;
 }

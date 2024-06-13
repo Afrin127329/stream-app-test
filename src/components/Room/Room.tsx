@@ -1,23 +1,17 @@
 /* eslint-disable prefer-const */
 import { Component, FormEvent, createRef } from "react";
-import { FiMic, FiMicOff, FiVideo, FiVideoOff } from "react-icons/fi";
-import io, { Socket } from "socket.io-client";
-//@ts-ignore
 import { AiOutlineSend } from "react-icons/ai";
 import { FaRightFromBracket } from "react-icons/fa6";
+import { FiMic, FiMicOff, FiVideo, FiVideoOff } from "react-icons/fi";
 import { MdOutlineScreenshotMonitor } from "react-icons/md";
-import {
-    addVideoStreamToDom,
-    black,
-    sendMessageToDom,
-    silence,
-} from "../../utils/scripts";
+import io, { Socket } from "socket.io-client";
+import { addVideoStreamToDom, black, silence } from "../../utils/scripts";
 import { RoomState } from "../../utils/types";
 import JoinRoom from "../JoinRoom/JoinRoom";
 import "./Room.css";
 
 // Global variables
-const serverUrl = "https://afrin-1.onrender.com/";
+const serverUrl = "http://localhost:3000";
 const configuration = {
     iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
 };
@@ -48,7 +42,8 @@ class Room extends Component<any, RoomState> {
             askForUsername: true,
             username: "",
             message: "",
-            totalUser: 0,
+            users: [],
+            sender: "",
         };
 
         connections = {};
@@ -63,6 +58,7 @@ class Room extends Component<any, RoomState> {
         this.handleAudio = this.handleAudio.bind(this);
         this.handleScreening = this.handleScreening.bind(this);
         this.handleEndcall = this.handleEndcall.bind(this);
+        this.joinParticipants = this.joinParticipants.bind(this);
     }
 
     componentDidMount() {
@@ -77,18 +73,20 @@ class Room extends Component<any, RoomState> {
 
     async getPermissions() {
         try {
-            // await navigator.mediaDevices
-            //     .getUserMedia({ video: true })
-            //     .then(() => (this.videoAvailable = true))
-            //     .catch(() => (this.videoAvailable = false));
-
-            // await navigator.mediaDevices
-            //     .getUserMedia({ audio: true })
-            //     .then(() => (this.audioAvailable = true))
-            //     .catch(() => (this.audioAvailable = false));
-
             await navigator.mediaDevices
-                .getUserMedia({ video: true, audio: true })
+                .getUserMedia({
+                    video: true,
+                    audio: {
+                        autoGainControl: false,
+                        channelCount: 2,
+                        echoCancellation: false,
+                        latency: 0,
+                        noiseSuppression: false,
+                        sampleRate: 48000,
+                        sampleSize: 16,
+                        volume: 1.0,
+                    },
+                })
                 .then(() => {
                     this.videoAvailable = true;
                     this.audioAvailable = true;
@@ -155,9 +153,6 @@ class Room extends Component<any, RoomState> {
     };
 
     getUserMediaSuccess(stream: any) {
-        console.log(connections);
-        console.log(Object.keys(connections).length);
-
         try {
             // @ts-ignore
             window.localStream.getTracks().forEach((track) => track.stop());
@@ -172,8 +167,6 @@ class Room extends Component<any, RoomState> {
 
         for (let id in connections) {
             if (id === socketId) continue;
-            console.log(id);
-            this.setState({ totalUser: Object.keys(connections).length });
 
             // @ts-ignore
             connections[id].addStream(window.localStream);
@@ -248,10 +241,15 @@ class Room extends Component<any, RoomState> {
         if (this.state.screen) {
             if (navigator.mediaDevices.getDisplayMedia) {
                 navigator.mediaDevices
-                    .getDisplayMedia({ video: true, audio: true })
+                    .getDisplayMedia({
+                        video: true,
+                        audio: true,
+                    })
                     .then(this.getDisplayMediaSuccess)
                     .then((_stream) => {})
                     .catch((error: Error) => console.log(error));
+
+                document.getElementById(`data`);
             }
         }
     };
@@ -265,7 +263,10 @@ class Room extends Component<any, RoomState> {
         } catch (error) {
             console.error(error);
         }
-
+        /**
+         * @todo Kinda working, when new user joins, this event is not triggered, only triggers for existing connections
+         */
+        socket!.emit("screen-sharing", { sharing: true, id: socketId });
         //@ts-ignore
         window.localStream = stream;
         this.localVideo.current.srcObject = stream;
@@ -330,6 +331,10 @@ class Room extends Component<any, RoomState> {
                             connections[fromId]
                                 .createAnswer()
                                 .then((description: any) => {
+                                    description.sdp = description.sdp.replace(
+                                        "useinbandfec=1",
+                                        "useinbandfec=1; stereo=1; maxaveragebitrate=510000"
+                                    );
                                     connections[fromId]
                                         .setLocalDescription(description)
                                         .then(() => {
@@ -380,7 +385,36 @@ class Room extends Component<any, RoomState> {
 
             socket?.on("chat-message", this.addMessage);
 
+            /**
+             *
+             * @todo need to work on it for proper screen sharing
+             */
+            socket?.on(
+                "screen-sharing",
+                (data: { sharing: boolean; id: string }) => {
+                    if (data.sharing) {
+                        console.log("screen shared", data.id);
+                        // Update the localVideo element to show the shared screen
+                        const searchVideo = document.querySelector(
+                            `[data-socket="${data.id}"]`
+                        );
+                        if (searchVideo) {
+                            this.localVideo.current.srcObject =
+                                //@ts-ignore
+                                searchVideo.srcObject;
+
+                            // @ts-ignore
+                            searchVideo.style.width = "400px";
+                        }
+                    } else {
+                        // Revert the localVideo element to show the user's own stream
+                        this.getUserMedia();
+                    }
+                }
+            );
+
             socket?.on("user-left", (id) => {
+                console.log("User Left", id);
                 let video = document.querySelector(`[data-socket="${id}"]`);
                 if (video !== null) {
                     elms--;
@@ -391,28 +425,29 @@ class Room extends Component<any, RoomState> {
             });
 
             socket?.on("user-joined", (id: string, clients: any) => {
-                clients.forEach((socketListId: string) => {
-                    connections[socketListId] = new RTCPeerConnection(
+                this.joinParticipants(clients);
+                clients.forEach((client: any) => {
+                    connections[client.id] = new RTCPeerConnection(
                         configuration
                     );
 
                     // Adding ice candidate
-                    connections[socketListId].onicecandidate = (e: any) => {
+                    connections[client.id].onicecandidate = (e: any) => {
                         if (e.candidate != null) {
                             socket?.emit(
                                 "signal",
-                                socketListId,
+                                client.id,
                                 JSON.stringify({ ice: e.candidate })
                             );
                         }
                     };
 
                     // Adding video stream
-                    connections[socketListId].onaddstream = (e: any) => {
+                    connections[client.id].onaddstream = (e: any) => {
                         /**@todo mute button, full screen button */
 
                         const searchVideo = document.querySelector(
-                            `[data-socket="${socketListId}"]`
+                            `[data-socket="${client.id}"]`
                         );
                         if (searchVideo !== null) {
                             //@ts-ignore
@@ -420,7 +455,7 @@ class Room extends Component<any, RoomState> {
                         } else {
                             elms = clients.length;
 
-                            addVideoStreamToDom(socketListId, e);
+                            addVideoStreamToDom(client.id, e);
                         }
                     };
 
@@ -432,7 +467,7 @@ class Room extends Component<any, RoomState> {
                         window.localStream !== null
                     ) {
                         //@ts-ignore
-                        connections[socketListId].addStream(window.localStream);
+                        connections[client.id].addStream(window.localStream);
                     } else {
                         let blackSilence = (...args: any[]) =>
                             new MediaStream([black(...args), silence()]);
@@ -440,7 +475,7 @@ class Room extends Component<any, RoomState> {
                         window.localStream = blackSilence();
 
                         //@ts-ignore
-                        connections[socketListId].addStream(window.localStream);
+                        connections[client.id].addStream(window.localStream);
                     }
                 });
 
@@ -480,18 +515,34 @@ class Room extends Component<any, RoomState> {
         });
     }
 
-    handleMessageSubmit(e: FormEvent<HTMLFormElement>) {
+    handleMessageSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         if (this.state.username !== null && this.state.message) {
-            sendMessageToDom(this.state.username, this.state.message);
+            socket?.emit(
+                "chat-message",
+                this.state.message,
+                this.state.username
+            );
         }
 
-        this.setState({ message: "" });
-    }
-    addMessage() {}
+        this.setState({ message: "", sender: this.state.username });
 
-    /**@todo video turn off not working */
+        //@ts-ignore
+        e.target.reset();
+    };
+    addMessage = (data: any, sender: any, _socketIdSender: any) => {
+        this.setState((prevState) => ({
+            messages: [...prevState.messages, { sender: sender, data: data }],
+        }));
+    };
+
+    joinParticipants = (clients: any) => {
+        this.setState(() => ({
+            users: clients,
+        }));
+    };
+
     handleVideo = () => {
         this.setState({ video: !this.state.video }, () => this.getUserMedia());
     };
@@ -500,7 +551,6 @@ class Room extends Component<any, RoomState> {
         this.setState({ audio: !this.state.audio }, () => this.getUserMedia());
     };
 
-    /**@todo screen handle not working */
     handleScreening = () => {
         this.setState({ screen: !this.state.screen }, () =>
             this.getDisplayMedia()
@@ -517,8 +567,7 @@ class Room extends Component<any, RoomState> {
     };
 
     render() {
-        const { askForUsername, username, audio, video, totalUser } =
-            this.state;
+        const { askForUsername, audio, video, users, messages } = this.state;
 
         return (
             <div>
@@ -535,19 +584,27 @@ class Room extends Component<any, RoomState> {
                         <section id="members__container">
                             <div id="members__header">
                                 <span>Participants</span>
-                                <strong id="members__count">{totalUser}</strong>
+
+                                <strong id="members__count">
+                                    {users.length}
+                                </strong>
                             </div>
 
                             <div id="member__list">
-                                <div
-                                    className="member__wrapper"
-                                    id="member__2__wrapper"
-                                >
-                                    <span className="green__icon"></span>
-                                    <p className="member_name">Dennis Ivy</p>
-                                </div>
+                                {users.map((user, index) => (
+                                    <div
+                                        className="member__wrapper"
+                                        id="member__2__wrapper"
+                                        key={index}
+                                    >
+                                        <span className="green__icon"></span>
+                                        <p className="member_name">
+                                            {user.user}
+                                        </p>
+                                    </div>
+                                ))}
 
-                                <div
+                                {/* <div
                                     className="member__wrapper"
                                     id="member__2__wrapper"
                                 >
@@ -555,16 +612,16 @@ class Room extends Component<any, RoomState> {
                                     <p className="member_name">
                                         Shahriar P. Shuvo 👋:
                                     </p>
-                                </div>
+                                </div> */}
 
                                 {/* Need to add users based on socket connections later  */}
-                                <div
+                                {/* <div
                                     className="member__wrapper"
                                     id="member__2__wrapper"
                                 >
                                     <span className="green__icon"></span>
                                     <p className="member_name">{username}</p>
-                                </div>
+                                </div> */}
                             </div>
                         </section>
                         {/* <h4>{remoteSocketId ? "Connected" : "No one in room"}</h4> */}
@@ -625,7 +682,7 @@ class Room extends Component<any, RoomState> {
 
                         <section id="messages__container">
                             <div id="messages">
-                                <div className="message__wrapper">
+                                {/* <div className="message__wrapper">
                                     <div className="message__body__bot">
                                         <strong className="message__author__bot">
                                             🤖 Points soft Bot
@@ -656,17 +713,6 @@ class Room extends Component<any, RoomState> {
                                         <p className="message__text">
                                             Does anyone know hen he will be
                                             back?
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="message__wrapper">
-                                    <div className="message__body__bot">
-                                        <strong className="message__author__bot">
-                                            🤖 Points soft Bot
-                                        </strong>
-                                        <p className="message__text__bot">
-                                            Sulamita just entered the room!
                                         </p>
                                     </div>
                                 </div>
@@ -789,7 +835,29 @@ class Room extends Component<any, RoomState> {
                                             back?
                                         </p>
                                     </div>
-                                </div>
+                                    </div> */}
+
+                                {messages.length > 0 ? (
+                                    messages.map((item, index) => (
+                                        <div
+                                            className="message__wrapper"
+                                            key={index}
+                                        >
+                                            <div className="message__body">
+                                                <strong className="message__author">
+                                                    {item.sender}
+                                                </strong>
+                                                <p className="message__text">
+                                                    {item.data}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="d-flex justify-content-center m-4">
+                                        No Message Yet
+                                    </div>
+                                )}
                             </div>
 
                             <form
@@ -800,6 +868,7 @@ class Room extends Component<any, RoomState> {
                                     type="text"
                                     name="message"
                                     placeholder="Send a message...."
+                                    value={this.state.message}
                                     onChange={(e) =>
                                         this.setState({
                                             message: e.target.value,

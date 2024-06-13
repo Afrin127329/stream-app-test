@@ -1,15 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { useSocket } from "../../context/SocketProvider";
 import "./LeaveRoom.css";
 
 const LeaveRoom = () => {
-    const socket: any = useSocket();
     const navigate = useNavigate();
     const handleClick = () => {
         navigate("/user/level/home");
-
-        // Not working
-        socket.emit("signal", { type: "bye", socketId: socket.id });
     };
 
     return (
