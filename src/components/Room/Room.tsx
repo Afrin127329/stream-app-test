@@ -11,7 +11,7 @@ import JoinRoom from "../JoinRoom/JoinRoom";
 import "./Room.css";
 
 // Global variables
-const serverUrl = "http://localhost:3000";
+const serverUrl = "https://afrin-1.onrender.com";
 const configuration = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
 };
