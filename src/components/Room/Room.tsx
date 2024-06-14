@@ -405,6 +405,7 @@ class Room extends Component<any, RoomState> {
       });
 
       socket?.on("user-joined", (id: string, clients: any) => {
+        console.log(clients);
         this.joinParticipants(clients);
         clients.forEach((client: any) => {
           connections[client.id] = new RTCPeerConnection(configuration);
