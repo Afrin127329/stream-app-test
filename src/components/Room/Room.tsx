@@ -76,17 +76,7 @@ class Room extends Component<any, RoomState> {
       await navigator.mediaDevices
         .getUserMedia({
           video: true,
-          audio: {
-            autoGainControl: false,
-            channelCount: 2,
-            echoCancellation: false,
-            //@ts-ignore
-            latency: 0,
-            noiseSuppression: false,
-            sampleRate: 48000,
-            sampleSize: 16,
-            volume: 1.0,
-          },
+          audio: true,
         })
         .then(() => {
           this.videoAvailable = true;
