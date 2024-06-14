@@ -17,28 +17,6 @@ export const generateRandomString = () => {
     return result;
 };
 
-export const sendMessageToDom = (senderName: string, message: string) => {
-    const messagesWrapper = document.getElementById("messages");
-
-    const newMessage = `<div class="message__wrapper">
-                        <div class="message__body">
-                            <strong class="message__author">${senderName}</strong>
-                            <p class="message__text">${message}</p>
-                        </div>
-                    </div>`;
-
-    if (messagesWrapper !== null) {
-        messagesWrapper.insertAdjacentHTML("beforeend", newMessage);
-    }
-
-    const lastMessage = document.querySelector(
-        "#messages .message__wrapper:last-child"
-    );
-    if (lastMessage) {
-        lastMessage.scrollIntoView();
-    }
-};
-
 export const joinParticipant = (username: string, socketId: string) => {
     const memberListContainer: any = document.getElementById("member__list");
     const participantDiv = document.getElementById(socketId);
@@ -56,12 +34,6 @@ export const joinParticipant = (username: string, socketId: string) => {
     } else {
         participantDiv.style.display = "flex";
     }
-};
-
-export const removeParticipant = (socketId: string) => {
-    const participantDiv = document.getElementById(socketId);
-
-    if (participantDiv) participantDiv.style.display = "none";
 };
 
 export const black = ({ width = 640, height = 480 } = {}) => {
