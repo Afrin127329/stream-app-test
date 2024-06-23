@@ -60,16 +60,62 @@ export const silence = () => {
     return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false });
 };
 
-export const addVideoStreamToDom = (socketListId: string, event: any) => {
+export const addVideoStreamToDom = (
+    socketListId: string,
+    event: any,
+    elms: number
+) => {
     const videoContainer = document.getElementById("video__container");
+    const cssMeasure = changeStyleForVideos(videoContainer, elms);
 
     const newVideo = document.createElement("video");
 
     newVideo.setAttribute("data-socket", socketListId);
     newVideo.classList.add("remote__video");
+    newVideo.style.minWidth = cssMeasure.minWidth;
+    newVideo.style.minHeight = cssMeasure.minHeight;
+    newVideo.style.setProperty("height", cssMeasure.height);
+    newVideo.style.setProperty("width", cssMeasure.width);
     newVideo.srcObject = event.stream;
     newVideo.autoplay = true;
     newVideo.playsInline = true;
 
     videoContainer?.appendChild(newVideo);
+};
+
+export const changeStyleForVideos = (main: any, elms: number) => {
+    const widthMain = main.offsetWidth;
+    let minWidth = "30%";
+    if ((widthMain * 30) / 100 < 300) {
+        minWidth = "300px";
+    }
+
+    const minHeight = "40%";
+
+    let height = String(100 / elms) + "%";
+    let width = "";
+
+    if (elms === 0 || elms === 1) {
+        width = "100%";
+        height = "100%";
+    } else if (elms === 2) {
+        width = "45%";
+        height = "100%";
+    } else if (elms === 3 || elms === 4) {
+        width = "35%";
+        height = "50%";
+    } else {
+        width = String(100 / elms) + "%";
+    }
+
+    const videos = main.querySelectorAll("video");
+
+    for (let a = 0; a < videos.length; ++a) {
+        videos[a].style.minWidth = minWidth;
+        videos[a].style.minHeight = minHeight;
+        videos[a].style.setProperty("width", width);
+        videos[a].style.setProperty("height", height);
+    }
+
+    return { minWidth, minHeight, width, height };
 };

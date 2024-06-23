@@ -1,10 +1,1 @@
-# Stream app project is ongoing
-
-## Features includes:
-
--   Video conferencing
--   Live broadcast
--   Live chat
--   Show online participants
--   Screen sharing
--   Join, Leave and Mute option
+### Group streaming video calling & Screen sharing app with WebRTC and Socket.io

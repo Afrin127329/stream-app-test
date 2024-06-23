@@ -11,10 +11,10 @@ export interface RoomState {
     audio: boolean;
     screen: boolean;
     screenAvailable: boolean;
-    newMessage: number;
     askForUsername: boolean;
     username: string;
     message: string;
     users: any[];
     sender: string;
+    handledUsers: any;
 }

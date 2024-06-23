@@ -185,6 +185,10 @@
     height: 60vh;
     display: none;
 }
+.stream__main {
+    display: flex;
+    justify-content: center;
+}
 
 .video__container {
     border-radius: 0;
@@ -198,16 +202,13 @@
 }
 
 .remote__video {
-    width: 150px;
-    height: 150px;
-    background-color: #d4ffce;
-    border: 2px solid #a3a3a3;
-    border-radius: 50%;
     object-fit: cover;
+    margin: 10px;
 }
 
 .main__video {
-    border: 2px solid #a3a3a3;
+    margin: 10px;
+    object-fit: cover;
 }
 
 @media (max-width: 1200px) {
