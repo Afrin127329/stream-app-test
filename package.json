@@ -2,13 +2,12 @@
     "name": "backend",
     "version": "1.0.0",
     "description": "",
-    "main": "index.js",
-    "type": "module",
+    "main": "index.ts",
     "private": "true",
     "scripts": {
         "build": "npx tsc --build",
         "client": "npm run start --prefix ./client",
-        "start": "nodemon index.js",
+        "start": "nodemon dist/index.js",
         "dev": "concurrently \"npm run start\" \"npm run client\""
     },
     "keywords": [],
@@ -24,7 +23,6 @@
         "nodemon": "^3.1.4",
         "socket.io": "^4.7.3",
         "typescript": "^5.3.3",
-        "wrtc": "^0.4.7",
         "xss": "^1.0.15"
     }
 }

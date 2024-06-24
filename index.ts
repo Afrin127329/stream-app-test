@@ -4,7 +4,6 @@ import express from "express";
 import { createServer } from "node:http";
 import path from "path";
 import { Server } from "socket.io";
-import { fileURLToPath } from "url";
 import xss from "xss";
 
 // variables
@@ -21,8 +20,9 @@ const io = new Server(server, {
     },
 });
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+//@ts-ignore
+// const _filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(_filename);
 
 // middlewares
 app.use(bodyParser.json());
@@ -35,11 +35,11 @@ app.use((req, res, next) => {
     );
     next();
 });
-app.use(express.static(path.join(__dirname, "./client/dist")));
+app.use(express.static(path.join(__dirname, "..", "client", "dist")));
 app.set("port", process.env.PORT || 8001);
 
 app.use("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "./client/dist/index.html"));
+    res.sendFile(path.join(__dirname, "..", "client", "dist", "index.html"));
 });
 // Initial route
 // app.get("/", (req, res) => {
@@ -157,6 +157,7 @@ io.on("connection", (socket) => {
         const leftTime = new Date();
         let key;
 
+        //@ts-ignore
         const diffTime = Math.abs(timeOnline[socket.id] - leftTime);
 
         for (const [k, v] of JSON.parse(
