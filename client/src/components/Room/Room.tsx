@@ -16,9 +16,20 @@ import JoinRoom from "../JoinRoom/JoinRoom";
 import "./Room.css";
 
 // Global variables
-const serverUrl = "https://meet.jobabd.xyz";
+// const serverUrl = "https://meet.jobabd.xyz";
+const serverUrl = "https://stream-app-test-us4j.onrender.com";
+// const configuration = {
+//     iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+// };
+
 const configuration = {
-    iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+    iceServers: [
+        {
+            urls: ["turn:13.250.13.83:3478?transport=udp"],
+            username: "YzYNCouZM1mhqhmseWk6",
+            credential: "YzYNCouZM1mhqhmseWk6",
+        },
+    ],
 };
 let connections: any = {};
 let socket: Socket | null = null;
