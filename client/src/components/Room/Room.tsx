@@ -19,7 +19,6 @@ import "./Room.css";
 const serverUrl = `${
   document.location.protocol + "//" + document.location.host
 }`;
-console.log(serverUrl);
 
 const configuration = {
   iceServers: [
