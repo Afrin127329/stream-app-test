@@ -16,7 +16,10 @@ import JoinRoom from "../JoinRoom/JoinRoom";
 import "./Room.css";
 
 // Global variables
-const serverUrl = `${process.env.SERVER_URI}`;
+const serverUrl = `${
+  document.location.protocol + "//" + document.location.host
+}`;
+console.log(serverUrl);
 
 const configuration = {
   iceServers: [
